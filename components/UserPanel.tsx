@@ -26,9 +26,7 @@ export function UserPanel({ user }: { user: SessionUser | null }) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-white">{label}</p>
-          <p className="truncate text-[11px] text-slate-400">
-            {user.email ?? "anonymous session"}
-          </p>
+          <p className="mt-0.5 text-[11px] text-slate-400">signed in</p>
         </div>
       </div>
       <div className="mt-3 flex gap-2">

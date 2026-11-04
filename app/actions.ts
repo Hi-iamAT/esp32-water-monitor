@@ -7,6 +7,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { ensureProfileRow } from "@/lib/data";
 import { clamp } from "@/lib/level";
 import type { Device } from "@/types/database";
 
@@ -71,39 +72,151 @@ async function logEvents(
 }
 
 /* ─────────────────────────────────────────────────────────────
- * Simple access gate (no-email login)
+ * Accounts — name + personal password (no email login)
  * ───────────────────────────────────────────────────────────── */
 
 /**
- * Shared access password check for the "name + simple pass" login.
+ * Every account is a real Supabase Auth user behind an *internal pseudo
+ * email* derived from their name:  "Atal A." → atal.a@hydrolevel.vercel.app
  *
- * Runs server-side only: the password never ships to JavaScript. Compares
- * SHA-256 digests with `timingSafeEqual` so response timing can't leak how
- * much of the guess was right. The actual anonymous sign-in happens in the
- * browser (supabase-js needs to set the session cookies on the client).
+ * - Nothing is ever sent to that address (no mail server exists for it
+ *   and "Confirm email" is disabled) — it exists only so Supabase can
+ *   authenticate, keep sessions, protect RLS rows by auth.uid(), and do
+ *   password changes.
+ * - The name IS the login ID: two people can't sign up with the same name,
+ *   and forgotten passwords aren't recoverable without an admin.
  */
-export async function verifyAccessPassword(
-  password: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const expected = process.env.APP_ACCESS_PASSWORD;
+const ACCOUNT_EMAIL_DOMAIN = "hydrolevel.vercel.app";
 
-  if (!expected) {
-    return {
-      ok: false,
-      error:
-        "Access password is not configured on the server (set APP_ACCESS_PASSWORD in .env.local).",
-    };
+function accountEmailForName(fullName: string): string {
+  const slug = fullName
+    .trim()
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/^\.+|\.+$/g, "")
+    .slice(0, 40)
+    .replace(/\.+$/, "");
+  return slug ? `${slug}@${ACCOUNT_EMAIL_DOMAIN}` : "";
+}
+
+/** Step 1 of the flow: create the account (name + password). */
+export async function createAccount(input: {
+  fullName: string;
+  password: string;
+}): Promise<{ error?: string }> {
+  try {
+    const fullName = (input.fullName ?? "").trim();
+    const password = input.password ?? "";
+
+    if (fullName.length < 2 || fullName.length > 60) {
+      return { error: "Enter your full name (2–60 characters)." };
+    }
+    if (password.length < 6) {
+      return { error: "Password must be at least 6 characters." };
+    }
+
+    const email = accountEmailForName(fullName);
+    if (!email) {
+      return {
+        error:
+          "Your name needs latin letters or numbers — it becomes your login ID (e.g. \"Atal Ahmad\" → atal.ahmad).",
+      };
+    }
+
+    // Server action context: the ssr client sets the session cookies here.
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: fullName } },
+    });
+
+    if (error) {
+      const code = error.code ?? "";
+      if (
+        code === "user_already_exists" ||
+        /already registered|already exists/i.test(error.message)
+      ) {
+        return {
+          error:
+            "This name is already taken — sign in with it instead, or use a different name.",
+        };
+      }
+      if (/rate limit/i.test(error.message) || code.startsWith("over_")) {
+        return {
+          error: "Too many attempts — wait a minute and try again.",
+        };
+      }
+      return { error: error.message };
+    }
+
+    if (!data.session) {
+      // Confirmation emails are enabled → the account exists but can't log in.
+      return {
+        error:
+          "Supabase still has \"Confirm email\" enabled, so the account was created but can't activate. In Supabase Dashboard → Authentication → Sign In / Up, turn OFF \"Confirm email\", then create the account again.",
+      };
+    }
+
+    // Best-effort profile row (schema may not be applied yet).
+    if (data.user) {
+      await ensureProfileRow(
+        data.user.id,
+        data.user.email,
+        data.user.user_metadata,
+      );
+    }
+    return {};
+  } catch (e) {
+    return { error: errMessage(e) };
   }
+}
 
-  const given = crypto
-    .createHash("sha256")
-    .update(typeof password === "string" ? password : "")
-    .digest();
-  const wanted = crypto.createHash("sha256").update(expected).digest();
+/** Step 2 of the flow: sign in with the same name + password. */
+export async function logInAccount(input: {
+  fullName: string;
+  password: string;
+}): Promise<{ error?: string }> {
+  try {
+    const fullName = (input.fullName ?? "").trim();
+    const email = accountEmailForName(fullName);
+    if (!email || !input.password) {
+      return { error: "Enter both your name and password." };
+    }
 
-  const ok = crypto.timingSafeEqual(given, wanted);
-  if (!ok) return { ok: false, error: "Wrong access password." };
-  return { ok: true };
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: input.password,
+    });
+
+    if (error) {
+      const code = error.code ?? "";
+      if (code === "email_not_confirmed") {
+        return {
+          error:
+            "Account not activated — ask the admin to turn OFF \"Confirm email\" in Supabase (Authentication → Sign In / Up), then recreate the account.",
+        };
+      }
+      if (/rate limit/i.test(error.message) || code.startsWith("over_")) {
+        return { error: "Too many attempts — wait a minute and try again." };
+      }
+      return { error: "Invalid name or password." };
+    }
+
+    // Best-effort profile row sync for returning users.
+    if (data.user) {
+      await ensureProfileRow(
+        data.user.id,
+        data.user.email,
+        data.user.user_metadata,
+      );
+    }
+    return {};
+  } catch (e) {
+    return { error: errMessage(e) };
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────

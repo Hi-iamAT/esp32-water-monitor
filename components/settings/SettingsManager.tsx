@@ -57,9 +57,7 @@ function AccountCard({
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
             <p className="mb-1 text-xs font-medium text-slate-500">
-              {profile.email
-                ? `Email: ${profile.email}`
-                : "Session: anonymous (no email)"}
+              Change your login password whenever you like:
             </p>
             <form
               onSubmit={(e) => {
