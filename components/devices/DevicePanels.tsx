@@ -93,12 +93,12 @@ export function AddDevicePanel() {
           </div>
           <p className="mt-3 rounded-lg bg-white/70 dark:bg-slate-800/50 px-3 py-2 text-xs text-emerald-800 dark:text-emerald-400">
             Configure the ESP32 to POST readings to{" "}
-            <code className=\"font-mono\">/api/readings</code> with header{" "}
-            <code className=\"font-mono\">
+            <code className="font-mono">/api/readings</code> with header{" "}
+            <code className="font-mono">
               X-API-Key: {result.api_key.slice(0, 7)}…
             </code>
             , device code{" "}
-            <code className=\"font-mono\">{result.device_code}</code>.
+            <code className="font-mono">{result.device_code}</code>.
           </p>
           <button
             onClick={() => setResult(null)}
@@ -166,7 +166,7 @@ export function DeviceCard({
             {device.device_name}
           </h3>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-            <code className=\"font-mono\">{device.device_code}</code> · key …
+            <code className="font-mono">{device.device_code}</code> · key …
             {device.api_key_prefix}
           </p>
         </div>
@@ -185,12 +185,12 @@ export function DeviceCard({
         <Row label="Last communication">
           {device.last_seen
             ? new Date(device.last_seen).toLocaleString([], {
-                month: \"short\",
-                day: \"numeric\",
-                hour: \"numeric\",
-                minute: \"2-digit\",
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
               })
-            : \"never\"}
+            : "never"}
         </Row>
         <Row label="Measurement interval">
           {device.interval_seconds}s
@@ -200,9 +200,9 @@ export function DeviceCard({
         </Row>
         <Row label="Sensor status">
           {latestOnline ? (
-            <StatusChip variant=\"ok\">OK</StatusChip>
+            <StatusChip variant="ok">OK</StatusChip>
           ) : (
-            <StatusChip variant=\"offline\">Awaiting data</StatusChip>
+            <StatusChip variant="offline">Awaiting data</StatusChip>
           )}
         </Row>
         <Row label="Buzzer threshold">
@@ -219,10 +219,10 @@ export function DeviceCard({
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <dt className=\"text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500\">
+      <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
         {label}
       </dt>
-      <dd className=\"mt-0.5 text-sm text-slate-800 dark:text-slate-200\">{children}</dd>
+      <dd className="mt-0.5 text-sm text-slate-800 dark:text-slate-200">{children}</dd>
     </div>
   );
 }
