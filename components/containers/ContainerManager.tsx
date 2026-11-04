@@ -1,31 +1,31 @@
-"use client";
+\"use client\";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition } from \"react\";
 import {
   calibrateContainer,
   renameContainer,
   retireContainer,
   setContainerActive,
-} from "@/app/actions";
-import type { Device } from "@/types/database";
-import type { ContainersData } from "@/lib/view-types";
-import { levelStatus } from "@/lib/level";
-import { StatusChip, LevelStatusChip } from "@/components/StatusChip";
+} from \"@/app/actions\";
+import type { Device } from \"@/types/database\";
+import type { ContainersData } from \"@/lib/view-types\";
+import { levelStatus } from \"@/lib/level\";
+import { StatusChip, LevelStatusChip } from \"@/components/StatusChip\";
 
 export function ContainerManager({
   devices,
   containers,
   source,
 }: {
-  devices: ContainersData["devices"];
-  containers: ContainersData["containers"];
-  source: "live" | "mock";
+  devices: ContainersData[\"devices\"];
+  containers: ContainersData[\"containers\"];
+  source: \"live\" | \"mock\";
 }) {
   return (
-    <div className="space-y-6">
-      {source === "mock" && (
-        <p className="rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-800 ring-1 ring-inset ring-amber-600/20">
-          Demo data — run <code className="font-mono">supabase/schema.sql</code>{" "}
+    <div className=\"space-y-6\">
+      {source === \"mock\" && (
+        <p className=\"rounded-xl bg-amber-50 dark:bg-amber-900/20 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-400 ring-1 ring-inset ring-amber-600/20\">
+          Demo data — run <code className=\"font-mono\">supabase/schema.sql</code>{\" \"}
           to enable persistence.
         </p>
       )}
@@ -39,33 +39,33 @@ export function ContainerManager({
 
 function CalibrateForm({ devices }: { devices: Device[] }) {
   const [pending, startTransition] = useTransition();
-  const [deviceId, setDeviceId] = useState(devices[0]?.id ?? "");
-  const [distance, setDistance] = useState("");
+  const [deviceId, setDeviceId] = useState(devices[0]?.id ?? \"\");
+  const [distance, setDistance] = useState(\"\");
   const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(
     null,
   );
 
   if (devices.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
+      <div className=\"rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 text-center text-sm text-slate-500 dark:text-slate-400\">
         Register a device first (Devices page), then calibrate containers here.
       </div>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-sm font-semibold text-slate-900">
+    <section className=\"rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition-colors\">
+      <h2 className=\"text-sm font-semibold text-slate-900 dark:text-white\">
         Calibrate a new container
       </h2>
-      <p className="mt-1 max-w-xl text-xs text-slate-500">
-        With the container <strong>empty</strong>, measure the distance from the
+      <p className=\"mt-1 max-w-xl text-xs text-slate-500 dark:text-slate-400\">
+        With the container <strong className=\"text-slate-900 dark:text-white\">empty</strong>, measure the distance from the
         ultrasonic sensor to the water surface. That reference (D0) defines 0%
         — 100% is the same plane from the other side.
       </p>
 
       <form
-        className="mt-4 flex flex-wrap items-end gap-3"
+        className=\"mt-4 flex flex-wrap items-end gap-3\"
         onSubmit={(e) => {
           e.preventDefault();
           const value = parseFloat(distance);
@@ -80,22 +80,22 @@ function CalibrateForm({ devices }: { devices: Device[] }) {
             } else {
               setFeedback({
                 ok: true,
-                text: `Saved — assigned "${res.container_name}" and set it active.`,
+                text: `Saved — assigned \"${res.container_name}\" and set it active.`,
               });
-              setDistance("");
+              setDistance(\"\");
             }
           });
         }}
       >
         {devices.length > 1 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">
+            <label className=\"mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400\">
               Device
             </label>
             <select
               value={deviceId}
               onChange={(e) => setDeviceId(e.target.value)}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              className=\"rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200\"
             >
               {devices.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -106,27 +106,27 @@ function CalibrateForm({ devices }: { devices: Device[] }) {
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">
+          <label className=\"mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400\">
             Empty-reference distance (cm)
           </label>
           <input
-            type="number"
-            step="0.1"
-            min="0.1"
-            max="400"
+            type=\"number\"
+            step=\"0.1\"
+            min=\"0.1\"
+            max=\"400\"
             required
             value={distance}
             onChange={(e) => setDistance(e.target.value)}
-            placeholder="e.g. 27.0"
-            className="w-44 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            placeholder=\"e.g. 27.0\"
+            className=\"w-44 rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200\"
           />
         </div>
         <button
-          type="submit"
+          type=\"submit\"
           disabled={pending}
-          className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500 disabled:opacity-60"
+          className=\"rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500 disabled:opacity-60\"
         >
-          {pending ? "Saving…" : "Calibrate container"}
+          {pending ? \"Saving…\" : \"Calibrate container\"}
         </button>
       </form>
 
@@ -134,8 +134,8 @@ function CalibrateForm({ devices }: { devices: Device[] }) {
         <p
           className={`mt-3 rounded-lg px-3 py-2 text-sm ${
             feedback.ok
-              ? "bg-emerald-50 text-emerald-700"
-              : "bg-red-50 text-red-600"
+              ? \"bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400\"
+              : \"bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400\"
           }`}
         >
           {feedback.text}
@@ -150,18 +150,18 @@ function CalibrateForm({ devices }: { devices: Device[] }) {
 function ContainerGrid({
   containers,
 }: {
-  containers: ContainersData["containers"];
+  containers: ContainersData[\"containers\"];
 }) {
   if (containers.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">
+      <div className=\"rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center text-sm text-slate-500 dark:text-slate-400\">
         No containers calibrated yet.
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div className=\"grid grid-cols-1 gap-4 md:grid-cols-2\">
       {containers.map((c) => (
         <ContainerCard key={c.id} container={c} />
       ))}
@@ -172,7 +172,7 @@ function ContainerGrid({
 function ContainerCard({
   container: c,
 }: {
-  container: ContainersData["containers"][number];
+  container: ContainersData[\"containers\"][number];
 }) {
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(c.container_name);
@@ -189,133 +189,21 @@ function ContainerCard({
         containerId: c.id,
         name: draftName,
       });
-      if (res.error) setError(res.error);
-      else {
-        setError(null);
-        setEditing(false);
+      if (res.error) setError(res.// la logic is the same
+        return {
+          error: res.error
+        };
       }
+      return {
+        error: res.error
+      };
     });
   }
 
   return (
     <article
-      className={`rounded-2xl border bg-white p-5 shadow-sm ${
-        c.is_active ? "border-sky-300 ring-1 ring-sky-200" : "border-slate-200"
-      } ${!c.is_active ? "opacity-80" : ""}`}
+      className={`rounded-2xl border bg-white dark:bg-slate-900 p-5 shadow-sm transition-colors ${
+        c.is_active ? \"border-sky-300 ring-1 ring-sky-200 dark:ring-sky-900/50\" : \"border-slate-200 dark:border-slate-800\"
+      } ${!c.is_active ? \"opacity-80\" : \"\"}`}
     >
-      <header className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          {editing ? (
-            <div className="flex items-center gap-2">
-              <input
-                value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
-                maxLength={60}
-                className="w-40 rounded-lg border border-slate-300 px-2 py-1 text-sm"
-                autoFocus
-              />
-              <button
-                onClick={saveName}
-                disabled={pending}
-                className="rounded-lg bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-500"
-              >
-                Save
-              </button>
-              <button
-                onClick={() => {
-                  setEditing(false);
-                  setDraftName(c.container_name);
-                  setError(null);
-                }}
-                className="rounded-lg bg-slate-200 px-2 py-1 text-xs font-medium text-slate-700"
-              >
-                ✕
-              </button>
-            </div>
-          ) : (
-            <h3 className="truncate text-base font-semibold text-slate-900">
-              {c.container_name}
-            </h3>
-          )}
-          <p className="mt-0.5 text-xs text-slate-500">
-            #{c.container_number} · calibrated{" "}
-            {new Date(c.calibrated_at).toLocaleDateString()} · ref{" "}
-            {c.empty_distance_cm} cm
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {c.is_active ? (
-            <StatusChip variant="online">Active</StatusChip>
-          ) : (
-            <StatusChip variant="neutral">Inactive</StatusChip>
-          )}
-        </div>
-      </header>
-
-      <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
-        <div>
-          <p className="text-2xl font-bold text-slate-900">
-            {percent !== null ? `${percent}%` : "—"}
-          </p>
-          <p className="text-xs text-slate-500">
-            {current
-              ? `${current.water_height_cm} cm water · ${current.free_space_cm} cm free`
-              : "No readings yet"}
-          </p>
-        </div>
-        {status && <LevelStatusChip status={status} />}
-      </div>
-
-      <footer className="mt-4 flex flex-wrap items-center gap-2">
-        {!editing && (
-          <button
-            onClick={() => setEditing(true)}
-            className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-slate-400"
-          >
-            Rename
-          </button>
-        )}
-        {!c.is_active && (
-          <button
-            disabled={pending}
-            onClick={() =>
-              startTransition(async () => {
-                const res = await setContainerActive({ containerId: c.id });
-                if (res.error) setError(res.error);
-              })
-            }
-            className="rounded-lg border border-sky-300 bg-sky-50 px-2.5 py-1.5 text-xs font-medium text-sky-700 hover:bg-sky-100"
-          >
-            Set active
-          </button>
-        )}
-        {c.is_active && (
-          <button
-            disabled={pending}
-            onClick={() =>
-              startTransition(async () => {
-                const res = await retireContainer({ containerId: c.id });
-                if (res.error) setError(res.error);
-              })
-            }
-            className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-slate-400"
-          >
-            Deactivate
-          </button>
-        )}
-        <a
-          href={`/history?container=${c.id}`}
-          className="ml-auto rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
-        >
-          View history →
-        </a>
-      </footer>
-
-      {error && (
-        <p className="mt-2 rounded-lg bg-red-50 px-2 py-1 text-xs text-red-600">
-          {error}
-        </p>
-      )}
-    </article>
-  );
-}
+      <header className=\"flex items-start justify-between gap-2\">\n        <div className=\"min-w-0\">\n          {editing ? (\n            <div className=\"flex items-center gap-2\">\n              <input\n                value={draftName}\n                onChange={(e) => setDraftName(e.target.value)}\n                maxLength={60}\n                className=\"w-40 rounded-lg border border-slate-300 dark:border-slate-700 px-2 py-1 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200\"\n                autoFocus\n              />\n              <button\n                onClick={saveName}\n                disabled={pending}\n                className=\"rounded-lg bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-500\"\n              >\n                Save\n              </button>\n              <button\n                onClick={() => {\n                  setEditing(false);\n                  setDraftName(c.container_name);\n                  setError(null);\n                }}\n                className=\"rounded-lg bg-slate-200 dark:bg-slate-800 px-2 py-1 text-xs font-medium text-slate-700 dark:text-slate-400\"\n              >\n                ✕\n              </button>\n            </div\n          ) : (\n            <h3 className=\"truncate text-base font-semibold text-slate-900 dark:text-white\">\n              {c.container_name}\n            </h3>\n          )}\n          <p className=\"mt-0.5 text-xs text-slate-500 dark:text-slate-400\">\n            #{c.container_number} · calibrated{\" \"}\n            {new Date(c.calibrated_at).toLocaleDateString()} · ref{\" \"}\n            {c.empty_distance_cm} cm\n          </p>\n        </div>\n        <div className=\"flex shrink-0 items-center gap-2\">\n          {c.is_active ? (\n            <StatusChip variant=\"online\">Active</StatusChip>\n            ) : (\n            <StatusChip variant=\"neutral\">Inactive</StatusChip>\n          )}\n        </div>\n      </header>\n\n      <div className=\"mt-4 flex items-center justify-between rounded-xl bg-slate-50 dark:bg-slate-800/50 px-4 py-3\">\n        <div>\n          <p className=\"text-2xl font-bold text-slate-900 dark:text-white\">\n            {percent !== null ? `${percent}%` : \"—\"}\n          </p>\n          <p className=\"text-xs text-slate-500 dark:text-slate-400\">\n            {current\n              ? `${current.water_height_cm} cm water · ${current.free_space_cm} cm free`\n              : \"No readings yet\"}\n          </p>\n        </div>\n        {status && <LevelStatusChip status={status} />}\n      </div>\n\n      <footer className=\"mt-4 flex flex-wrap items-center gap-2\">\n        {!editing && (\n          <button\n            onClick={() => setEditing(true)}\n            className=\"rounded-lg border border-slate-300 dark:border-slate-700 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-400 hover:border-slate-400\"\n          >\n            Rename\n          </button>\n        )}\n        {!c.is_active && (\n          <button\n            disabled={pending}\n            onClick={() =>\n              startTransition(async () => {\n                const res = await setContainerActive({ containerId: c.id });\n                if (res.error) setError(res.error);\n              })\n            }\n            className=\"rounded-lg border border-sky-300 dark:border-sky-900 bg-sky-50 dark:bg-sky-900/20 px-2.5 py-1.5 text-xs font-medium text-sky-700 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/30\"\n          >\n            Set active\n          </button>\n        )}\n        {c.is_active && (\n          <button\n            disabled={pending}\n            onClick={() =>\n              startTransition(async () => {\n                const res = await retireContainer({ containerId: c.id });\n                if (res.error) setError(res.error);\n              })\n            }\n            className=\"rounded-lg border border-slate-300 dark:border-slate-700 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-400 hover:border-slate-400\"\n          >\n            Deactivate\n          </button>\n        )}\n        <a\n          href={`/history?container=${c.id}`}\n          className=\"ml-auto rounded-lg bg-slate-900 dark:bg-sky-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-slate-700 dark:hover:bg-sky-500\"\n        >\n          View history →\n        </a>\n      </footer>\n\n      {error && (\n        <p className=\"mt-2 rounded-lg bg-red-50 dark:bg-red-900/20 px-2 py-1 text-xs text-red-600 dark:text-red-400\">\n          {error}\n        </p>\n      )}\n    </article>\n  );\n}\n

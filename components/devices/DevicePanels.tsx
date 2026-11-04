@@ -44,13 +44,13 @@ export function AddDevicePanel() {
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition-colors">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
             Register a device
           </h2>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Each ESP32 gets its own credential — the key hash is stored, the
             plaintext is shown once.
           </p>
@@ -66,19 +66,19 @@ export function AddDevicePanel() {
       </div>
 
       {error && (
-        <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+        <p className="mt-3 rounded-lg bg-red-50 dark:bg-red-900/20 px-3 py-2 text-sm text-red-600 dark:text-red-400">
           {error}
         </p>
       )}
 
       {result ? (
-        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-          <p className="text-sm font-semibold text-emerald-800">
+        <div className="mt-4 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-4">
+          <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-400">
             Device registered. Copy the API key now — it cannot be shown
             again.
           </p>
           <div className="mt-3 flex items-center gap-2">
-            <code className="flex-1 overflow-x-auto rounded-lg bg-white px-3 py-2 font-mono text-sm text-slate-900 ring-1 ring-emerald-600/20">
+            <code className="flex-1 overflow-x-auto rounded-lg bg-white dark:bg-slate-800 px-3 py-2 font-mono text-sm text-slate-900 dark:text-white ring-1 ring-emerald-600/20">
               {result.api_key}
             </code>
             <button
@@ -91,18 +91,18 @@ export function AddDevicePanel() {
               {copied ? "Copied ✓" : "Copy"}
             </button>
           </div>
-          <p className="mt-3 rounded-lg bg-white/70 px-3 py-2 text-xs text-emerald-800">
+          <p className="mt-3 rounded-lg bg-white/70 dark:bg-slate-800/50 px-3 py-2 text-xs text-emerald-800 dark:text-emerald-400">
             Configure the ESP32 to POST readings to{" "}
-            <code className="font-mono">/api/readings</code> with header{" "}
-            <code className="font-mono">
+            <code className=\"font-mono\">/api/readings</code> with header{" "}
+            <code className=\"font-mono\">
               X-API-Key: {result.api_key.slice(0, 7)}…
             </code>
             , device code{" "}
-            <code className="font-mono">{result.device_code}</code>.
+            <code className=\"font-mono\">{result.device_code}</code>.
           </p>
           <button
             onClick={() => setResult(null)}
-            className="mt-3 text-xs font-medium text-emerald-700 underline"
+            className="mt-3 text-xs font-medium text-emerald-700 dark:text-emerald-400 underline"
           >
             Done — register another device
           </button>
@@ -113,7 +113,7 @@ export function AddDevicePanel() {
           onSubmit={submit}
         >
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">
               Device name
             </label>
             <input
@@ -121,24 +121,24 @@ export function AddDevicePanel() {
               value={deviceName}
               onChange={(e) => setDeviceName(e.target.value)}
               placeholder="e.g. Basement tank meter"
-              className="w-52 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              className="w-52 rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">
               Device code (optional)
             </label>
             <input
               value={deviceCode}
               onChange={(e) => setDeviceCode(e.target.value)}
               placeholder="ESP32_001"
-              className="w-44 rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono"
+              className="w-44 rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm font-mono bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
             />
           </div>
           <button
             type="submit"
             disabled={pending}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
+            className="rounded-lg bg-slate-900 dark:bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 dark:hover:bg-sky-500 disabled:opacity-60"
           >
             {pending ? "Creating…" : "Create device + key"}
           </button>
@@ -159,14 +159,14 @@ export function DeviceCard({
   latestOnline: boolean;
 }) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <article className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition-colors">
       <header className="flex items-start justify-between">
         <div>
-          <h3 className="text-base font-semibold text-slate-900">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white">
             {device.device_name}
           </h3>
-          <p className="mt-0.5 text-xs text-slate-500">
-            <code className="font-mono">{device.device_code}</code> · key …
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            <code className=\"font-mono\">{device.device_code}</code> · key …
             {device.api_key_prefix}
           </p>
         </div>
@@ -185,12 +185,12 @@ export function DeviceCard({
         <Row label="Last communication">
           {device.last_seen
             ? new Date(device.last_seen).toLocaleString([], {
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
+                month: \"short\",
+                day: \"numeric\",
+                hour: \"numeric\",
+                minute: \"2-digit\",
               })
-            : "never"}
+            : \"never\"}
         </Row>
         <Row label="Measurement interval">
           {device.interval_seconds}s
@@ -200,9 +200,9 @@ export function DeviceCard({
         </Row>
         <Row label="Sensor status">
           {latestOnline ? (
-            <StatusChip variant="ok">OK</StatusChip>
+            <StatusChip variant=\"ok\">OK</StatusChip>
           ) : (
-            <StatusChip variant="offline">Awaiting data</StatusChip>
+            <StatusChip variant=\"offline\">Awaiting data</StatusChip>
           )}
         </Row>
         <Row label="Buzzer threshold">
@@ -219,10 +219,10 @@ export function DeviceCard({
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+      <dt className=\"text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500\">
         {label}
       </dt>
-      <dd className="mt-0.5 text-sm text-slate-800">{children}</dd>
+      <dd className=\"mt-0.5 text-sm text-slate-800 dark:text-slate-200\">{children}</dd>
     </div>
   );
 }
