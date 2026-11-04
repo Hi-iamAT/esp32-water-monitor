@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ESP32 firmware secrets (Wi-Fi passwords, API keys) — copy from secrets.h.example
+esp32/**/secrets.h
