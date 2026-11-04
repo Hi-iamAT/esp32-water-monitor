@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { UserPanel, type SessionUser } from "@/components/UserPanel";
@@ -25,6 +26,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
 /** Authoritative session gate inside the shell. */
 async function UserPanelServer() {
+  // Request-time subtree: the session check reads the current clock
+  // (Date.now() inside supabase-js) — declare it dynamic so the static
+  // shell (sidebar frame) can still prerender.
+  await connection();
+
   if (!isSupabaseConfigured()) {
     return (
       <UserPanelFallback>

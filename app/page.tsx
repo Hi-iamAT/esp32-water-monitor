@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -12,10 +13,12 @@ export default function Home() {
 
 /**
  * Send authenticated users to the dashboard, everyone else to /login.
- * Reading cookies is request-time work — this component runs inside
- * the Suspense boundary above so the shell can prerender.
+ * Cookies + the session check are request-time work — declared with
+ * connection() so the root shell prerenders cleanly.
  */
 async function HomeRedirector() {
+  await connection();
+
   const configured = Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
