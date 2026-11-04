@@ -15,7 +15,8 @@ export function SettingsManager({ data }: { data: SettingsData }) {
     <div className="space-y-4">
       {data.source === "mock" && (
         <p className="rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-800 ring-1 ring-inset ring-amber-600/20">
-          Demo data — settings are read-only until Supabase is configured.
+          Demo data — run <code className="font-mono">supabase/schema.sql</code>{" "}
+          to make settings persistent.
         </p>
       )}
       <AccountCard profile={data.profile} />

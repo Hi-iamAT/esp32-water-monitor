@@ -39,6 +39,22 @@ async function getSupabase(): Promise<SupabaseClient | null> {
   return createSupabaseServerClient();
 }
 
+/**
+ * Has schema.sql been applied yet? The REST schema cache answers
+ * "table not found" (PGRST205 / 42P01) before the SQL is run — in that
+ * state the data accessors keep serving demo data instead.
+ */
+async function schemaReady(supabase: SupabaseClient): Promise<boolean> {
+  try {
+    const { error } = await supabase.from("devices").select("id").limit(1);
+    if (!error) return true;
+    const code = (error as { code?: string }).code;
+    return code !== "PGRST205" && code !== "42P01";
+  } catch {
+    return false;
+  }
+}
+
 /** Guarantee the public.users row exists (auth trigger may have been added late). */
 export async function ensureProfileRow(
   userId: string,
@@ -47,7 +63,7 @@ export async function ensureProfileRow(
 ): Promise<void> {
   try {
     const supabase = await getSupabase();
-    if (!supabase) return;
+    if (!supabase || !(await schemaReady(supabase))) return;
 
     const { data } = await supabase
       .from("users")
@@ -97,6 +113,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
   await connection(); // request-time data → keep out of the static shell
   const supabase = await getSupabase();
   if (!supabase) return mockDashboard();
+  if (!(await schemaReady(supabase))) return mockDashboard();
 
   const now = new Date();
 
@@ -149,6 +166,7 @@ export async function getContainersData(): Promise<ContainersData> {
   await connection();
   const supabase = await getSupabase();
   if (!supabase) return mockContainers();
+  if (!(await schemaReady(supabase))) return mockContainers();
 
   const [{ data: devices }, { data: containers }] = await Promise.all([
     supabase.from("devices").select("*").order("created_at"),
@@ -194,6 +212,7 @@ export async function getHistoryData(params: {
   await connection();
   const supabase = await getSupabase();
   if (!supabase) return mockHistory(params);
+  if (!(await schemaReady(supabase))) return mockHistory(params);
 
   const { data: containers } = await supabase
     .from("containers")
@@ -242,6 +261,7 @@ export async function getDevicesData(): Promise<DevicesData> {
   await connection();
   const supabase = await getSupabase();
   if (!supabase) return mockDevices();
+  if (!(await schemaReady(supabase))) return mockDevices();
 
   const [{ data: devices }, { data: events }, { data: containers }] =
     await Promise.all([
@@ -275,6 +295,7 @@ export async function getSettingsData(): Promise<SettingsData> {
   await connection();
   const supabase = await getSupabase();
   if (!supabase) return mockSettings();
+  if (!(await schemaReady(supabase))) return mockSettings();
 
   const [{ data: profile }, { data: devices }, { data: containers }] =
     await Promise.all([

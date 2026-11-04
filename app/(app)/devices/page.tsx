@@ -45,7 +45,8 @@ async function DevicesContent() {
     <div className="space-y-4">
       {data.source === "mock" && (
         <p className="rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-800 ring-1 ring-inset ring-amber-600/20">
-          Demo data — connect Supabase to register your real ESP32.
+          Demo data — run <code className="font-mono">supabase/schema.sql</code>{" "}
+          to register and manage real ESP32s.
         </p>
       )}
 

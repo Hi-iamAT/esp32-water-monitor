@@ -61,7 +61,8 @@ async function HistoryContent({
     <div className="space-y-4">
       {data.source === "mock" && (
         <p className="rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-800 ring-1 ring-inset ring-amber-600/20">
-          Demo data — connect Supabase to see your real measurement history.
+          Demo data — run <code className="font-mono">supabase/schema.sql</code>{" "}
+          to see your real measurement history.
         </p>
       )}
 

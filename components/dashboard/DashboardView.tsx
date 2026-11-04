@@ -45,9 +45,10 @@ export function DashboardView({
       {/* Demo-mode banner */}
       {source === "mock" && (
         <p className="rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-800 ring-1 ring-inset ring-amber-600/20">
-          Showing <strong>demo data</strong> — create the Supabase database
-          (see <code className="font-mono">supabase/schema.sql</code>) and add
-          your keys to <code className="font-mono">.env.local</code> to go live.
+          Showing <strong>demo data</strong> — run{" "}
+          <code className="font-mono">supabase/schema.sql</code> in your
+          Supabase project, then add the secret key to{" "}
+          <code className="font-mono">.env.local</code> to go live.
         </p>
       )}
 

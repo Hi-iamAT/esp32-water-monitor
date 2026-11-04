@@ -25,7 +25,8 @@ export function ContainerManager({
     <div className="space-y-6">
       {source === "mock" && (
         <p className="rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-800 ring-1 ring-inset ring-amber-600/20">
-          Demo data — changes are not persisted until Supabase is configured.
+          Demo data — run <code className="font-mono">supabase/schema.sql</code>{" "}
+          to enable persistence.
         </p>
       )}
       <CalibrateForm devices={devices} />
