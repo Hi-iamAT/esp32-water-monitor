@@ -65,15 +65,29 @@ export async function ensureProfileRow(
     const supabase = await getSupabase();
     if (!supabase || !(await schemaReady(supabase))) return;
 
+    const meta = (metadata ?? {}) as Record<string, string | undefined>;
+    const wantedName = meta.full_name ?? null;
+
     const { data } = await supabase
       .from("users")
-      .select("id")
+      .select("id, full_name")
       .eq("id", userId)
       .maybeSingle();
-    if (data) return;
 
-    // Row missing → RLS insert is not granted; use the service client.
-    const meta = (metadata ?? {}) as Record<string, string | undefined>;
+    if (data) {
+      // Row exists → keep the display name in sync (user_metadata wins).
+      const row = data as { id: string; full_name: string | null };
+      if (wantedName && row.full_name !== wantedName) {
+        await supabase
+          .from("users")
+          .update({ full_name: wantedName })
+          .eq("id", userId);
+      }
+      return;
+    }
+
+    // Row missing (trigger added late) → RLS insert is not granted; seed via
+    // the service client, then verify so a missing trigger isn't a crash.
     const service = createSupabaseServiceClient();
     await service.from("users").upsert({
       id: userId,

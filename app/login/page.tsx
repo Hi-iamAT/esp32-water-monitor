@@ -87,7 +87,7 @@ async function LoginPanel({
     <>
       {params.setup && (
         <p className="mb-4 rounded-lg bg-sky-500/10 px-3 py-2 text-center text-sm text-sky-300">
-          Sign in or create an account to view your dashboard.
+          Enter your name and the access password to view your dashboard.
         </p>
       )}
       <div className="rounded-xl bg-white p-5">

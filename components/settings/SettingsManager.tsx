@@ -57,7 +57,9 @@ function AccountCard({
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
             <p className="mb-1 text-xs font-medium text-slate-500">
-              Email: {profile.email}
+              {profile.email
+                ? `Email: ${profile.email}`
+                : "Session: anonymous (no email)"}
             </p>
             <form
               onSubmit={(e) => {
@@ -103,6 +105,7 @@ function AccountCard({
             </form>
           </div>
 
+          {profile.email ? (
           <div>
             <form
               onSubmit={(e) => {
@@ -167,7 +170,19 @@ function AccountCard({
                 </p>
               )}
             </form>
-          </div>
+            </div>
+          ) : (
+            <div>
+              <p className="text-xs text-slate-500">
+                Anonymous session — there is no account password to manage.
+              </p>
+              <p className="mt-2 text-[11px] leading-4 text-slate-400">
+                Signed out? Just sign in again with your name and the access
+                password — your container setups live on the device records,
+                not on this browser.
+              </p>
+            </div>
+          )}
         </div>
       )}
     </Card>

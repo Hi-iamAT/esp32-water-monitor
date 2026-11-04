@@ -71,6 +71,42 @@ async function logEvents(
 }
 
 /* ─────────────────────────────────────────────────────────────
+ * Simple access gate (no-email login)
+ * ───────────────────────────────────────────────────────────── */
+
+/**
+ * Shared access password check for the "name + simple pass" login.
+ *
+ * Runs server-side only: the password never ships to JavaScript. Compares
+ * SHA-256 digests with `timingSafeEqual` so response timing can't leak how
+ * much of the guess was right. The actual anonymous sign-in happens in the
+ * browser (supabase-js needs to set the session cookies on the client).
+ */
+export async function verifyAccessPassword(
+  password: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const expected = process.env.APP_ACCESS_PASSWORD;
+
+  if (!expected) {
+    return {
+      ok: false,
+      error:
+        "Access password is not configured on the server (set APP_ACCESS_PASSWORD in .env.local).",
+    };
+  }
+
+  const given = crypto
+    .createHash("sha256")
+    .update(typeof password === "string" ? password : "")
+    .digest();
+  const wanted = crypto.createHash("sha256").update(expected).digest();
+
+  const ok = crypto.timingSafeEqual(given, wanted);
+  if (!ok) return { ok: false, error: "Wrong access password." };
+  return { ok: true };
+}
+
+/* ─────────────────────────────────────────────────────────────
  * Devices
  * ───────────────────────────────────────────────────────────── */
 

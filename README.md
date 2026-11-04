@@ -16,7 +16,7 @@ See `PLAN.md` for the full architecture, schema and build roadmap, and
 | History | `/history` | %/height/free-space charts (recharts), container + date filters, latest-10 table, CSV export |
 | Devices | `/devices` | Register ESP32 (API key shown **once**), device cards, event log |
 | Settings | `/settings` | Thresholds (25/50/75 LEDs, 90 buzzer), interval, account, device config |
-| Login | `/login` | Supabase Auth email+password |
+| Login | `/login` | Name + shared access password → anonymous Supabase session (no email, no rate limits); change the password via `APP_ACCESS_PASSWORD` |
 
 Until Supabase is configured the app renders **demo data** everywhere and
 banner-notifies — the UI is fully explorable.
