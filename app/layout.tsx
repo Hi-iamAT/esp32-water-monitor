@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   },
   description:
     "Live dashboard for a portable water-level meter: ESP32 + ultrasonic sensor readings, container calibration, history and alerts.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
