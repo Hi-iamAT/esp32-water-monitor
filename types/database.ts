@@ -55,6 +55,42 @@ export type Reading = {
   free_space_cm: number
   sensor_valid: boolean
   recorded_at: string
+  /* SmartFill 2.0 pump fields (schema-pump.sql). Optional until the
+     migration has run — older rows and demo data simply omit them. */
+  /** ACTUAL relay state reported by the ESP32 (optional/legacy rows). */
+  pump_status?: boolean | null
+  /** Control mode the device ran in: AUTO | MANUAL (optional/legacy rows). */
+  control_mode?: ControlMode | null
+  /** Current continuous run duration in seconds (optional/legacy rows). */
+  pump_runtime_seconds?: number | null
+}
+
+export type ControlMode = "AUTO" | "MANUAL"
+
+export type PumpState = "ON" | "OFF"
+
+/** One CURRENT command per device — the website's request to the ESP32. */
+export type DeviceCommand = {
+  id: number
+  device_code: string
+  mode: ControlMode
+  pump: PumpState
+  updated_at: string
+  expires_at: string | null
+  updated_by: string | null
+  acknowledged_at: string | null
+}
+
+export type PumpEventType = "STARTED" | "STOPPED"
+
+/** An ACTUAL pump transition (recorded once per real relay change). */
+export type PumpEvent = {
+  id: number
+  device_code: string
+  event_type: PumpEventType
+  occurred_at: string
+  runtime_seconds: number | null
+  stop_reason: string | null
 }
 
 export type DeviceEventType =

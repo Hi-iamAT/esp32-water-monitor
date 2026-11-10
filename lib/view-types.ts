@@ -4,7 +4,14 @@
  * produce these shapes, with identical demo-mode fallbacks.
  */
 
-import type { Container, Device, DeviceEvent, Reading } from "@/types/database";
+import type {
+  Container,
+  Device,
+  DeviceCommand,
+  DeviceEvent,
+  PumpEvent,
+  Reading,
+} from "@/types/database";
 
 export type Source = "live" | "mock";
 
@@ -19,6 +26,15 @@ export type DashboardSnapshot = {
   activeContainer: Container | null;
   latestReading: Reading | null;
   recentReadings: Reading[];
+  /* SmartFill 2.0 pump data (nulls/empty until schema-pump.sql runs) */
+  /** Current stored command for the device (null = AUTO/OFF default). */
+  command: DeviceCommand | null;
+  /** Orphaned? never — recent ACTUAL pump transitions, newest first. */
+  pumpEvents: PumpEvent[];
+  /** Pump runtime today in seconds (stopped events + current run). */
+  todayPumpSeconds: number | null;
+  /** Number of pump STARTED transitions today (filling cycles). */
+  cyclesToday: number | null;
 };
 
 export type ContainersData = {

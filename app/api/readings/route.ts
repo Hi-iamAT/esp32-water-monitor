@@ -35,6 +35,13 @@ type Payload = {
   firmware_version?: string;
   wifi_rssi?: number;
   mode?: "reading" | "calibration";
+
+  /* SmartFill 2.0 — ACTUAL pump state reported by the device. */
+  pump_status?: boolean;
+  control_mode?: string;
+  pump_runtime_seconds?: number | string;
+  /** Firmware-supplied reason (only meaningful when the pump stopped). */
+  stop_reason?: string;
 };
 
 const CORS = {
@@ -136,13 +143,13 @@ export async function POST(request: NextRequest) {
   /* ── 4. Threshold-crossing bookkeeping (before insert) ─── */
   const prevReadingRow = await supabase
     .from("readings")
-    .select("water_level_percent, sensor_valid")
+    .select("water_level_percent, sensor_valid, pump_status")
     .eq("container_id", container.id)
     .order("recorded_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   const previous = (prevReadingRow.data ?? null) as
-    | Pick<Reading, "water_level_percent" | "sensor_valid">
+    | Pick<Reading, "water_level_percent" | "sensor_valid" | "pump_status">
     | null;
 
   const threshold = Number(device.threshold_buzzer);
@@ -152,6 +159,20 @@ export async function POST(request: NextRequest) {
     (previous == null || previous.water_level_percent < threshold);
 
   /* ── 5. Insert the reading ─────────────────────────────── */
+
+  // Pump fields: validate types / allowed values; store the ACTUAL state
+  // reported by the ESP32 (never a website-requested command).
+  const controlMode =
+    body.control_mode === "AUTO" || body.control_mode === "MANUAL"
+      ? body.control_mode
+      : null;
+  if (body.control_mode !== undefined && !controlMode) {
+    return json({ ok: false, error: "invalid_control_mode" }, 400);
+  }
+  const pumpRuntime = toNumber(body.pump_runtime_seconds);
+  const pumpRuntimeSeconds =
+    pumpRuntime === null ? null : Math.max(0, Math.round(pumpRuntime));
+
   const reading: Reading = {
     id: 0,
     device_id: device.id,
@@ -161,6 +182,9 @@ export async function POST(request: NextRequest) {
     water_level_percent: level.waterLevelPercent,
     free_space_cm: level.freeSpaceCm,
     sensor_valid: sensorValid,
+    pump_status: body.pump_status ?? null,
+    control_mode: controlMode,
+    pump_runtime_seconds: pumpRuntimeSeconds,
     recorded_at: new Date().toISOString(),
   };
 
@@ -174,9 +198,36 @@ export async function POST(request: NextRequest) {
       water_level_percent: reading.water_level_percent,
       free_space_cm: reading.free_space_cm,
       sensor_valid: reading.sensor_valid,
+      pump_status: reading.pump_status,
+      control_mode: reading.control_mode,
+      pump_runtime_seconds: reading.pump_runtime_seconds,
     });
   if (insertResult.error) {
     return json({ ok: false, error: "storage_failed" }, 500);
+  }
+
+  /* ── 5b. Actual pump transition → one pump_events row ─────
+     Only when the reported state differs from the previous actual
+     state — never per reading, never on button clicks. Without a
+     previous pump status (first reading ever) we don't guess. */
+  const prevPump = previous?.pump_status ?? null;
+  const reportedPump = body.pump_status ?? null;
+  if (reportedPump !== null && prevPump !== null && reportedPump !== prevPump) {
+    if (reportedPump) {
+      await supabase.from("pump_events").insert({
+        device_code: device.device_code,
+        event_type: "STARTED",
+      });
+    } else {
+      await supabase.from("pump_events").insert({
+        device_code: device.device_code,
+        event_type: "STOPPED",
+        runtime_seconds: pumpRuntimeSeconds ?? undefined,
+        // If the firmware doesn't supply a reason yet, store null
+        // rather than guessing.
+        stop_reason: body.stop_reason ?? null,
+      });
+    }
   }
 
   /* ── 6. Device heartbeat + events ──────────────────────── */
@@ -244,7 +295,16 @@ export async function POST(request: NextRequest) {
     await supabase.from("device_events").insert(events);
   }
 
-  /* ── 7. Config ack (response = config channel) ─────────── */
+  /* ── 7. Config ack + command channel ─────────────────────
+     The response doubles as a config channel, and now ALSO carries
+     the current pump command — so a device that POSTs regularly
+     doesn't need a separate GET /api/device-command poll. */
+  const { data: commandRow } = await supabase
+    .from("device_commands")
+    .select("mode, pump, updated_at, expires_at")
+    .eq("device_code", device.device_code)
+    .maybeSingle();
+
   return json({
     ok: true,
     container_id: container.id,
@@ -263,7 +323,14 @@ export async function POST(request: NextRequest) {
       free_space_cm: level.freeSpaceCm,
       status: levelStatus(level.waterLevelPercent),
     },
-    pending_command: null as string | null,
+    command: (commandRow ?? null) as
+      | {
+          mode: "AUTO" | "MANUAL";
+          pump: "ON" | "OFF";
+          updated_at: string;
+          expires_at: string | null;
+        }
+      | null,
   });
 }
 

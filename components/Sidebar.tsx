@@ -21,16 +21,17 @@ export function Sidebar({ children }: { children?: React.ReactNode }) {
   const pathname = usePathname();
   const [theme, setTheme] = useState<"light" | "dark">("dark");
 
-  useEffect(() => {
+  if (
+    typeof window !== "undefined" // adjustment happens in the browser render
+  ) {
     const saved = localStorage.getItem("theme") as "light" | "dark" | null;
-    if (saved) {
-      setTheme(saved);
-    } else {
-      // Default to system preference if no saved theme
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setTheme(prefersDark ? "dark" : "light");
-    }
-  }, []);
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+    const initial: "light" | "dark" =
+      saved ?? (prefersDark ? "dark" : "light");
+    if (initial !== theme) setTheme(initial);
+  }
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");

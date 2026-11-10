@@ -5,7 +5,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Container,
   Device,
+  DeviceCommand,
   DeviceEvent,
+  PumpEvent,
   Reading,
 } from "@/types/database";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
@@ -166,6 +168,56 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
     latestReading = recentReadings[0] ?? null;
   }
 
+  /* ── SmartFill 2.0 pump data ──────────────────────────────
+     Read through the user's session client (RLS select-own policies).
+     If the pump migration hasn't run yet the queries error — degrade
+     to nulls/empty so the dashboard keeps working. */
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const [commandRes, eventsRes, todayRes] = await Promise.all([
+    supabase
+      .from("device_commands")
+      .select("*")
+      .eq("device_code", device.device_code)
+      .maybeSingle(),
+    supabase
+      .from("pump_events")
+      .select("*")
+      .eq("device_code", device.device_code)
+      .order("occurred_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("pump_events")
+      .select("event_type, runtime_seconds")
+      .eq("device_code", device.device_code)
+      .gte("occurred_at", startOfDay.toISOString()),
+  ]);
+
+  const command = (commandRes.data ?? null) as DeviceCommand | null;
+  const pumpEvents = (eventsRes.data ?? []) as PumpEvent[];
+
+  // Runtime today: sum of today's STOPPED events + the current run
+  // reported by the latest reading (source of truth stays device data).
+  let todayPumpSeconds = 0;
+  let cyclesToday = 0;
+  if (!todayRes.error) {
+    for (const e of (todayRes.data ?? []) as PumpEvent[]) {
+      if (e.event_type === "STOPPED") {
+        todayPumpSeconds += e.runtime_seconds ?? 0;
+      } else {
+        cyclesToday += 1;
+      }
+    }
+    const runningSeconds = latestReading?.pump_status
+      ? (latestReading.pump_runtime_seconds ?? 0)
+      : 0;
+    todayPumpSeconds += runningSeconds;
+  } else {
+    todayPumpSeconds = null as unknown as number;
+    cyclesToday = null as unknown as number;
+  }
+
   return {
     source: "live",
     now: now.toISOString(),
@@ -173,6 +225,10 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
     activeContainer: activeContainer ?? null,
     latestReading,
     recentReadings,
+    command,
+    pumpEvents,
+    todayPumpSeconds,
+    cyclesToday,
   };
 }
 
@@ -348,6 +404,10 @@ function emptySnapshot(base: { source: Source; now: string }): DashboardSnapshot
     activeContainer: null,
     latestReading: null,
     recentReadings: [],
+    command: null,
+    pumpEvents: [],
+    todayPumpSeconds: null,
+    cyclesToday: null,
   };
 }
 
@@ -431,6 +491,10 @@ function mockReadingFor(
     water_level_percent: percent,
     free_space_cm: Math.round((emptyDistance - height) * 10) / 10,
     sensor_valid: true,
+    /* Demo pump data: in AUTO the pump runs while the tank isn't full. */
+    pump_status: percent <= 85,
+    control_mode: "AUTO",
+    pump_runtime_seconds: percent <= 85 ? 118 : null,
     recorded_at: now.toISOString(),
   };
 }
@@ -453,6 +517,37 @@ function mockDashboard(): DashboardSnapshot {
     activeContainer: active,
     latestReading: recentReadings[0],
     recentReadings,
+    // Demo command: device runs AUTO. One recent pump event as example.
+    command: {
+      id: 1,
+      device_code: device.device_code,
+      mode: "AUTO",
+      pump: "OFF",
+      updated_at: new Date(now.getTime() - 10 * 60_000).toISOString(),
+      expires_at: null,
+      updated_by: null,
+      acknowledged_at: new Date(now.getTime() - 9 * 60_000).toISOString(),
+    },
+    pumpEvents: [
+      {
+        id: 2,
+        device_code: device.device_code,
+        event_type: "STOPPED",
+        occurred_at: new Date(now.getTime() - 8 * 60_000).toISOString(),
+        runtime_seconds: 412,
+        stop_reason: "TARGET_REACHED",
+      },
+      {
+        id: 1,
+        device_code: device.device_code,
+        event_type: "STARTED",
+        occurred_at: new Date(now.getTime() - 15 * 60_000).toISOString(),
+        runtime_seconds: null,
+        stop_reason: null,
+      },
+    ],
+    todayPumpSeconds: 412,
+    cyclesToday: 2,
   };
 }
 

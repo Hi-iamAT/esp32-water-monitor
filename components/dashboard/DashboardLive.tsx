@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import type { Reading } from "@/types/database";
+import type { DeviceCommand, PumpEvent, Reading } from "@/types/database";
 import type { DashboardSnapshot, DeviceWithOnline } from "@/lib/view-types";
 import { DashboardView } from "@/components/dashboard/DashboardView";
 
@@ -99,6 +99,50 @@ export function DashboardLive({ initial }: { initial: DashboardSnapshot }) {
             const merged =
               s.device?.id === updated.id
                 ? { ...s, device: { ...s.device, ...updated } }
+                : s;
+            return { ...prev, now: new Date(), realtimeOn: true, snap: merged };
+          });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "pump_events" },
+        (payload) => {
+          const ev = payload.new as PumpEvent;
+          setCo((prev) => {
+            const s = prev.snap;
+            const merged =
+              s.device && ev.device_code === s.device.device_code
+                ? {
+                    ...s,
+                    pumpEvents: [ev, ...s.pumpEvents].slice(0, 20),
+                    todayPumpSeconds:
+                      s.todayPumpSeconds === null
+                        ? s.todayPumpSeconds
+                        : s.todayPumpSeconds +
+                          (ev.event_type === "STOPPED"
+                            ? (ev.runtime_seconds ?? 0)
+                            : 0),
+                    cyclesToday:
+                      s.cyclesToday === null
+                        ? s.cyclesToday
+                        : s.cyclesToday + (ev.event_type === "STARTED" ? 1 : 0),
+                  }
+                : s;
+            return { ...prev, now: new Date(), realtimeOn: true, snap: merged };
+          });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "device_commands" },
+        (payload) => {
+          const cmd = payload.new as DeviceCommand;
+          setCo((prev) => {
+            const s = prev.snap;
+            const merged =
+              s.device && cmd.device_code === s.device.device_code
+                ? { ...s, command: cmd }
                 : s;
             return { ...prev, now: new Date(), realtimeOn: true, snap: merged };
           });
